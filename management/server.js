@@ -24,7 +24,7 @@ const multer = require('multer');
 const upload = multer({dest: './upload'});
 
 app.get('/api/customers', (req,res)=>{
-    connection.query('select * from customer', (err, result, fields)=>{
+    connection.query('select * from customer where isDeleted = 0', (err, result, fields)=>{
       res.send(result);
     })
 })
@@ -32,16 +32,28 @@ app.get('/api/customers', (req,res)=>{
 app.use('/image', express.static('./upload'));
 
 app.post('/api/customers', upload.single('image'), (req,res)=>{
-  let sql = `INSERT  INTO customer VALUES (null, ?,?,?,?,?)`;
+  let sql = `INSERT  INTO customer VALUES (null, ?,?,?,?,?,?,0)`;
   let image = '/image/'+req.file.filename;
   let name = req.body.name;
   let birthday = req.body.birthday;
   let gender = req.body.gender;
   let job = req.body.job;
-  let params = [image, name, birthday, gender, job];
+  let createTime = new Date()
+  console.log('createTime:',createTime)
+  let params = [image, name, birthday, gender, job, createTime];
   connection.query(sql, params, (err, rows, fields)=>{
     res.send(rows);
     console.log(err);
+  })
+})
+
+app.delete('/api/customers/:id', (req,res)=>{
+  let sql = 'UPDATE customer SET isDeleted = 1 Where id = ?';
+  let params = [req.params.id];
+  console.log(params);
+  connection.query(sql, params, (err, rows, fields)=>{
+    console.log(err);
+    res.send(rows);
   })
 })
 
